@@ -154,17 +154,9 @@ async function loadExecutiveOverview(filters = {}) {
             <div class="chart-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                     <h2>Revenue Trend</h2>
-                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                        <div id="year-filter" class="filter-group">
-                            <label for="year-select">Year:</label>
-                            <select id="year-select" onchange="filterByYear(this.value)">
-                                <option value="all">All Years</option>
-                            </select>
-                        </div>
-                        <div class="chart-controls">
-                            <button class="btn btn-primary active" onclick="switchRevenueView('year')">View by Year</button>
-                            <button class="btn btn-secondary" onclick="switchRevenueView('month')">View by Month</button>
-                        </div>
+                    <div class="chart-controls">
+                        <button class="btn btn-primary active" onclick="switchRevenueView('year')">View by Year</button>
+                        <button class="btn btn-secondary" onclick="switchRevenueView('month')">View by Month</button>
                     </div>
                 </div>
                 <div class="chart">
@@ -200,21 +192,9 @@ async function loadRevenueTrend() {
 
         // Store all monthly data
         allMonthlyData = {};
-        const years = new Set();
         
         result.data.forEach(item => {
             allMonthlyData[item.month] = item.revenue;
-            const year = item.month.split('-')[0];
-            years.add(year);
-        });
-
-        // Populate year filter dropdown
-        const yearSelect = document.getElementById('year-select');
-        years.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            yearSelect.appendChild(option);
         });
 
         // Store monthly data
@@ -223,25 +203,6 @@ async function loadRevenueTrend() {
     } catch (error) {
         console.error('Failed to load revenue trend:', error);
     }
-}
-
-// Filter monthly data by year
-function filterByYear(year) {
-    if (!allMonthlyData) return;
-
-    let filteredData = {};
-    
-    if (year === 'all') {
-        filteredData = allMonthlyData;
-    } else {
-        Object.keys(allMonthlyData).forEach(month => {
-            if (month.startsWith(year)) {
-                filteredData[month] = allMonthlyData[month];
-            }
-        });
-    }
-
-    renderBarChart('revenue-chart', filteredData, `Revenue by Month (${year === 'all' ? 'All Years' : year})`, '#2a5298');
 }
 
 // Switch between year and month view
@@ -253,20 +214,13 @@ function switchRevenueView(view) {
         btn.classList.remove('btn-primary', 'btn-secondary', 'active');
     });
 
-    const yearFilter = document.getElementById('year-filter');
-
     if (view === 'year') {
         event.target.classList.add('btn-primary', 'active');
         event.target.nextElementSibling.classList.add('btn-secondary');
-        yearFilter.style.display = 'none';
         renderBarChart('revenue-chart', revenueTrendData.year, 'Revenue by Year', '#1e3c72');
     } else {
         event.target.classList.add('btn-primary', 'active');
         event.target.previousElementSibling.classList.add('btn-secondary');
-        yearFilter.style.display = 'flex';
-        
-        // Reset to all years
-        document.getElementById('year-select').value = 'all';
         
         if (revenueTrendData.month) {
             renderBarChart('revenue-chart', revenueTrendData.month, 'Revenue by Month (All Years)', '#2a5298');
