@@ -61,7 +61,7 @@ pip install -r requirements.txt
 
 3. **Run the application**
 ```bash
-python API.py
+python app.py
 ```
 
 4. **Access the dashboard**
@@ -80,7 +80,7 @@ start_with_ngrok.bat
 ### Manual Method
 ```bash
 # Terminal 1: Flask
-python API.py
+python app.py
 
 # Terminal 2: Ngrok
 ngrok http 5000
@@ -141,13 +141,11 @@ Final_project_course_1/
 │   ├── customers.csv     # Customer information
 │   ├── orders.csv        # Order transactions
 │   └── products.csv      # Product catalog
-├── API.py               # Flask backend with filters
+├── app.py               # Flask backend with filters
 ├── report.html          # Dashboard frontend
 ├── report.js            # JavaScript with filter logic
 ├── requirements.txt     # Python dependencies
 ├── start_with_ngrok.bat # Auto-start script for ngrok
-├── push_to_github.bat   # Git push automation
-├── NGROK_GUIDE.md       # Detailed ngrok documentation
 └── README.md           # This file
 ```
 
@@ -218,7 +216,7 @@ product_id, product_name, category, price
 
 ### Local Development
 ```bash
-python API.py
+python app.py
 # Access at http://localhost:5000
 ```
 
