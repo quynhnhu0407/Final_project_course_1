@@ -223,7 +223,7 @@
             background: #e9ecef;
             border-radius: 5px;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .bar-fill {
@@ -236,7 +236,43 @@
             padding-right: 10px;
             color: white;
             font-weight: bold;
+            font-size: 0.85em;
             transition: width 1s ease-out;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        .bar-fill.small-bar {
+            justify-content: flex-start;
+            padding-left: 5px;
+        }
+
+        .bar-text-outside {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #495057;
+            font-weight: bold;
+            font-size: 0.85em;
+            white-space: nowrap;
+            z-index: 10;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .bar-track {
+            position: relative;
+            overflow: visible;
         }
 
         .two-column {
@@ -326,6 +362,59 @@
             box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
         }
 
+        .filter-group input[type="number"] {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            color: #495057;
+            width: 120px;
+            transition: all 0.3s;
+        }
+
+        .filter-group input[type="number"]:hover {
+            border-color: #1e3c72;
+        }
+
+        .filter-group input[type="number"]:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+
+        .filter-group input[type="date"] {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            color: #495057;
+            width: 160px;
+            transition: all 0.3s;
+        }
+
+        .filter-group input[type="date"]:hover {
+            border-color: #1e3c72;
+        }
+
+        .filter-group input[type="date"]:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+
+        /* Remove spinner arrows from number input */
+        .filter-group input[type="number"]::-webkit-inner-spin-button,
+        .filter-group input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .filter-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
         #year-filter {
             display: none;
         }
@@ -372,6 +461,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="report.js"></script>
 </body>
 </html>

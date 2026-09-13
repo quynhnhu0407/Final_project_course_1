@@ -56,12 +56,22 @@ function destroyChart(chartId) {
 // ==================== EXECUTIVE OVERVIEW ====================
 let revenueTrendData = null;
 let allMonthlyData = null;
+let executiveFilterOptions = null;
 
-async function loadExecutiveOverview() {
+async function loadExecutiveOverview(filters = {}) {
     const container = document.getElementById('executive-tab');
     
     try {
-        const response = await fetch(`${API_BASE}/api/executive-overview`);
+        // Build query string from filters
+        const params = new URLSearchParams();
+        if (filters.year) params.append('year', filters.year);
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        
+        const queryString = params.toString();
+        const url = `${API_BASE}/api/executive-overview${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url);
         const result = await response.json();
         
         if (!result.success) {
@@ -70,9 +80,44 @@ async function loadExecutiveOverview() {
         }
 
         const data = result.data;
+        executiveFilterOptions = result.filter_options;
 
         container.innerHTML = `
             <h2>📈 Executive Overview</h2>
+            
+            <div class="chart-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h3>Filters</h3>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div class="filter-group">
+                            <label for="overview-year-filter">Year:</label>
+                            <select id="overview-year-filter" onchange="applyExecutiveFilters()">
+                                <option value="">All Years</option>
+                                ${executiveFilterOptions.years.map(y => 
+                                    `<option value="${y}" ${filters.year == y ? 'selected' : ''}>${y}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="start-date-filter">Start Date:</label>
+                            <input type="date" id="start-date-filter" 
+                                   min="${executiveFilterOptions.date_range.min}" 
+                                   max="${executiveFilterOptions.date_range.max}" 
+                                   value="${filters.start_date || ''}"
+                                   onchange="applyExecutiveFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label for="end-date-filter">End Date:</label>
+                            <input type="date" id="end-date-filter" 
+                                   min="${executiveFilterOptions.date_range.min}" 
+                                   max="${executiveFilterOptions.date_range.max}" 
+                                   value="${filters.end_date || ''}"
+                                   onchange="applyExecutiveFilters()">
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetExecutiveFilters()">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -230,11 +275,22 @@ function switchRevenueView(view) {
 }
 
 // ==================== CUSTOMER ANALYSIS ====================
-async function loadCustomerAnalysis() {
+let customerFilterOptions = null;
+
+async function loadCustomerAnalysis(filters = {}) {
     const container = document.getElementById('customer-tab');
     
     try {
-        const response = await fetch(`${API_BASE}/api/customer-analysis`);
+        // Build query string from filters
+        const params = new URLSearchParams();
+        if (filters.loyalty_member) params.append('loyalty_member', filters.loyalty_member);
+        if (filters.city) params.append('city', filters.city);
+        if (filters.age_group) params.append('age_group', filters.age_group);
+        
+        const queryString = params.toString();
+        const url = `${API_BASE}/api/customer-analysis${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url);
         const result = await response.json();
         
         if (!result.success) {
@@ -243,9 +299,46 @@ async function loadCustomerAnalysis() {
         }
 
         const data = result.data;
+        customerFilterOptions = result.filter_options;
 
         container.innerHTML = `
             <h2>👥 Customer Analysis</h2>
+            
+            <div class="chart-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h3>Filters</h3>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div class="filter-group">
+                            <label for="loyalty-filter">Loyalty Member:</label>
+                            <select id="loyalty-filter" onchange="applyCustomerFilters()">
+                                <option value="">All</option>
+                                ${customerFilterOptions.loyalty_members.map(lm => 
+                                    `<option value="${lm}" ${filters.loyalty_member === lm ? 'selected' : ''}>${lm}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="city-filter">City:</label>
+                            <select id="city-filter" onchange="applyCustomerFilters()">
+                                <option value="">All</option>
+                                ${customerFilterOptions.cities.map(city => 
+                                    `<option value="${city}" ${filters.city === city ? 'selected' : ''}>${city}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="age-group-filter">Age Group:</label>
+                            <select id="age-group-filter" onchange="applyCustomerFilters()">
+                                <option value="">All</option>
+                                ${customerFilterOptions.age_groups.map(ag => 
+                                    `<option value="${ag}" ${filters.age_group === ag ? 'selected' : ''}>${ag}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetCustomerFilters()">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="two-column">
                 <div class="chart-container">
@@ -319,8 +412,28 @@ async function loadCustomerAnalysis() {
         });
         renderDonutChart('loyalty-chart', loyaltyData, 'Revenue by Loyalty');
 
+        // Convert purchase frequency numbers to customer names (hardcoded for test data)
+        const frequencyNames = {
+            '1': 'One-time Buyers',
+            '2': 'Occasional Shoppers',
+            '3': 'Regular Customers',
+            '4': 'Frequent Buyers',
+            '5': 'Loyal Patrons',
+            '6': 'VIP Customers',
+            '7': 'Elite Members',
+            '8': 'Top Advocates',
+            '9': 'Premium Collectors',
+            '10': 'Ultimate Champions'
+        };
+        
+        const namedFrequencyData = {};
+        Object.keys(data.purchase_frequency).forEach(key => {
+            const name = frequencyNames[key] || `${key} Purchases`;
+            namedFrequencyData[name] = data.purchase_frequency[key];
+        });
+
         // Render frequency chart
-        renderSimpleBarChart('frequency-chart', data.purchase_frequency, (v) => `${v}`);
+        renderSimpleBarChart('frequency-chart', namedFrequencyData, (v) => `${v}`);
 
         // Render age segmentation
         renderSimpleBarChart('age-chart', data.age_segmentation, (v) => `${v}`);
@@ -331,11 +444,22 @@ async function loadCustomerAnalysis() {
 }
 
 // ==================== PRODUCT PERFORMANCE ====================
-async function loadProductPerformance() {
+let productFilterOptions = null;
+
+async function loadProductPerformance(filters = {}) {
     const container = document.getElementById('product-tab');
     
     try {
-        const response = await fetch(`${API_BASE}/api/product-performance`);
+        // Build query string from filters
+        const params = new URLSearchParams();
+        if (filters.category) params.append('category', filters.category);
+        if (filters.price_min) params.append('price_min', filters.price_min);
+        if (filters.price_max) params.append('price_max', filters.price_max);
+        
+        const queryString = params.toString();
+        const url = `${API_BASE}/api/product-performance${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url);
         const result = await response.json();
         
         if (!result.success) {
@@ -344,9 +468,48 @@ async function loadProductPerformance() {
         }
 
         const data = result.data;
+        productFilterOptions = result.filter_options;
 
         container.innerHTML = `
             <h2>🛍️ Product Performance</h2>
+            
+            <div class="chart-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h3>Filters</h3>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div class="filter-group">
+                            <label for="category-filter">Category:</label>
+                            <select id="category-filter" onchange="applyProductFilters()">
+                                <option value="">All</option>
+                                ${productFilterOptions.categories.map(cat => 
+                                    `<option value="${cat}" ${filters.category === cat ? 'selected' : ''}>${cat}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="price-min-filter">Price Min:</label>
+                            <input type="number" id="price-min-filter" 
+                                   min="${productFilterOptions.price_range.min}" 
+                                   max="${productFilterOptions.price_range.max}" 
+                                   step="10"
+                                   value="${filters.price_min || ''}"
+                                   placeholder="Min"
+                                   onchange="applyProductFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label for="price-max-filter">Price Max:</label>
+                            <input type="number" id="price-max-filter" 
+                                   min="${productFilterOptions.price_range.min}" 
+                                   max="${productFilterOptions.price_range.max}" 
+                                   step="10"
+                                   value="${filters.price_max || ''}"
+                                   placeholder="Max"
+                                   onchange="applyProductFilters()">
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetProductFilters()">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -501,6 +664,23 @@ function renderBarChart(canvasId, data, label, color) {
                             return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
                         }
                     }
+                },
+                datalabels: {
+                    color: '#fff',
+                    anchor: 'end',
+                    align: 'top',
+                    offset: -5,
+                    font: {
+                        size: 11,
+                        weight: 'bold'
+                    },
+                    formatter: function(value) {
+                        return formatCurrency(value);
+                    },
+                    display: function(context) {
+                        // Only show labels if there aren't too many bars
+                        return context.chart.data.labels.length <= 12;
+                    }
                 }
             },
             scales: {
@@ -525,7 +705,8 @@ function renderBarChart(canvasId, data, label, color) {
                     }
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 }
 
@@ -550,6 +731,9 @@ function renderDonutChart(canvasId, data, label) {
             return '#1e3c72'; // Navy cho Yes (good)
         }
     });
+
+    // Calculate total for percentages
+    const total = values.reduce((a, b) => a + b, 0);
 
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'doughnut',
@@ -585,15 +769,31 @@ function renderDonutChart(canvasId, data, label) {
                     bodyFont: { size: 13 },
                     callbacks: {
                         label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const value = context.parsed;
                             const percentage = ((value / total) * 100).toFixed(1);
                             return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
                         }
                     }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${percentage}%`;
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    offset: 0,
+                    textAlign: 'center',
+                    display: true
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 }
 
@@ -651,6 +851,23 @@ function renderLineChart(canvasId, data, label, color) {
                             return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
                         }
                     }
+                },
+                datalabels: {
+                    color: color,
+                    anchor: 'end',
+                    align: 'top',
+                    offset: 5,
+                    font: {
+                        size: 10,
+                        weight: 'bold'
+                    },
+                    formatter: function(value) {
+                        return formatCurrency(value);
+                    },
+                    display: function(context) {
+                        // Only show labels if there aren't too many points
+                        return context.chart.data.labels.length <= 12;
+                    }
                 }
             },
             scales: {
@@ -679,7 +896,8 @@ function renderLineChart(canvasId, data, label, color) {
                 intersect: false,
                 mode: 'index'
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 }
 
@@ -688,20 +906,28 @@ function renderSimpleBarChart(containerId, data, formatFunc) {
     if (!container) return;
 
     const entries = Object.entries(data);
+    const totalValue = entries.reduce((sum, [_, v]) => sum + v, 0);
     const maxValue = Math.max(...entries.map(([_, v]) => v));
 
     container.innerHTML = '';
 
     entries.forEach(([label, value]) => {
-        const percentage = (value / maxValue) * 100;
+        const widthPercentage = (value / maxValue) * 100;
+        const valuePercentage = ((value / totalValue) * 100).toFixed(1);
+        const displayText = `${formatFunc(value)} (${valuePercentage}%)`;
+        
+        // Nếu thanh bar quá nhỏ (< 15%), đặt text bên ngoài
+        const isSmallBar = widthPercentage < 15;
+        
         const barItem = document.createElement('div');
         barItem.className = 'bar-item';
         barItem.innerHTML = `
             <div class="bar-label">${label}</div>
             <div class="bar-track">
-                <div class="bar-fill" style="width: ${percentage}%">
-                    ${formatFunc(value)}
+                <div class="bar-fill ${isSmallBar ? 'small-bar' : ''}" style="width: ${widthPercentage}%">
+                    ${isSmallBar ? '' : displayText}
                 </div>
+                ${isSmallBar ? `<div class="bar-text-outside">${displayText}</div>` : ''}
             </div>
         `;
         container.appendChild(barItem);
@@ -712,3 +938,74 @@ function renderSimpleBarChart(containerId, data, formatFunc) {
 document.addEventListener('DOMContentLoaded', () => {
     loadExecutiveOverview();
 });
+
+// ==================== FILTER FUNCTIONS ====================
+
+// Executive Overview Filters
+function applyExecutiveFilters() {
+    const filters = {
+        year: document.getElementById('overview-year-filter').value,
+        start_date: document.getElementById('start-date-filter').value,
+        end_date: document.getElementById('end-date-filter').value
+    };
+    
+    // Remove empty filters
+    Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+    });
+    
+    loadExecutiveOverview(filters);
+}
+
+function resetExecutiveFilters() {
+    document.getElementById('overview-year-filter').value = '';
+    document.getElementById('start-date-filter').value = '';
+    document.getElementById('end-date-filter').value = '';
+    loadExecutiveOverview();
+}
+
+// Customer Analysis Filters
+function applyCustomerFilters() {
+    const filters = {
+        loyalty_member: document.getElementById('loyalty-filter').value,
+        city: document.getElementById('city-filter').value,
+        age_group: document.getElementById('age-group-filter').value
+    };
+    
+    // Remove empty filters
+    Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+    });
+    
+    loadCustomerAnalysis(filters);
+}
+
+function resetCustomerFilters() {
+    document.getElementById('loyalty-filter').value = '';
+    document.getElementById('city-filter').value = '';
+    document.getElementById('age-group-filter').value = '';
+    loadCustomerAnalysis();
+}
+
+// Product Performance Filters
+function applyProductFilters() {
+    const filters = {
+        category: document.getElementById('category-filter').value,
+        price_min: document.getElementById('price-min-filter').value,
+        price_max: document.getElementById('price-max-filter').value
+    };
+    
+    // Remove empty filters
+    Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+    });
+    
+    loadProductPerformance(filters);
+}
+
+function resetProductFilters() {
+    document.getElementById('category-filter').value = '';
+    document.getElementById('price-min-filter').value = '';
+    document.getElementById('price-max-filter').value = '';
+    loadProductPerformance();
+}

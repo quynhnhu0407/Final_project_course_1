@@ -1,6 +1,6 @@
 # 📊 Sales Report Dashboard
 
-A comprehensive sales analytics dashboard built with Flask backend and interactive Chart.js visualizations.
+A comprehensive sales analytics dashboard with advanced filtering, built with Flask backend and interactive Chart.js visualizations.
 
 ![Dashboard Preview](https://img.shields.io/badge/Status-Active-success)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
@@ -9,35 +9,34 @@ A comprehensive sales analytics dashboard built with Flask backend and interacti
 ## 🎯 Features
 
 ### 📈 Executive Overview
-- Total Revenue tracking
+- Total Revenue tracking with filters
 - Total Orders count
 - Customer base size
 - Average Order Value (AOV)
-- Revenue Growth percentage
-- Interactive Year/Month revenue charts with filter
+- Revenue Growth percentage (YoY)
+- Interactive charts with Year/Month views
+- **Filters**: Year, Start Date, End Date
 
 ### 👥 Customer Analysis
 - New vs Returning customer segmentation
 - Top 10 customers by revenue
-- Purchase frequency distribution
+- Purchase frequency distribution (with custom names)
 - Loyalty member analysis with donut chart
 - Age group segmentation
+- **Filters**: Loyalty Member (Yes/No), City, Age Group
 
 ### 🛍️ Product Performance
 - Top 10 best-selling products
 - Revenue breakdown by category
 - Total quantity sold
-- Best and worst performing products comparison
+- Best and worst performing products
+- **Filters**: Category, Price Range (Min/Max)
 
-## 🖼️ Screenshots
-
-### Executive Overview
-Dashboard showing key metrics and revenue trends with interactive filters.
-
-### Customer Loyalty
-Donut chart visualization with color-coded risk indicators:
-- 🔵 Navy Blue (Yes) - Loyal customers
-- 🔴 Red (No) - At-risk customers requiring attention
+### 🎨 Enhanced Visualizations
+- Bar charts with percentage (%) display
+- Color-coded loyalty indicators (Navy/Red)
+- Responsive design for all screen sizes
+- Smooth animations and transitions
 
 ## 🚀 Quick Start
 
@@ -66,68 +65,156 @@ python API.py
 ```
 
 4. **Access the dashboard**
-Open your browser and navigate to: `http://localhost:5000`
+Open browser: `http://localhost:5000`
+
+## 🌐 Share Online with Ngrok
+
+### Quick Method (Recommended)
+```bash
+# Double-click:
+start_with_ngrok.bat
+
+# Follow the prompts to update URL automatically
+```
+
+### Manual Method
+```bash
+# Terminal 1: Flask
+python API.py
+
+# Terminal 2: Ngrok
+ngrok http 5000
+
+# Copy the Forwarding URL (https://xxxx.ngrok-free.app)
+# Update API_BASE in report.js
+```
+
+### Ngrok Setup (First Time Only)
+1. Download: https://ngrok.com/download
+2. Sign up: https://dashboard.ngrok.com/signup
+3. Get authtoken: https://dashboard.ngrok.com/get-started/your-authtoken
+4. Configure:
+```bash
+ngrok config add-authtoken YOUR_AUTH_TOKEN
+```
+
+## 🔍 Filters Guide
+
+### Executive Overview Filters
+| Filter | Type | Description |
+|--------|------|-------------|
+| Year | Dropdown | Filter by specific year (2023, 2024) |
+| Start Date | Date Picker | Filter from date |
+| End Date | Date Picker | Filter to date |
+
+### Customer Analysis Filters
+| Filter | Type | Description |
+|--------|------|-------------|
+| Loyalty Member | Dropdown | Yes/No |
+| City | Dropdown | Filter by customer city |
+| Age Group | Dropdown | 18-25, 26-35, 36-50, 50+ |
+
+### Product Performance Filters
+| Filter | Type | Description |
+|--------|------|-------------|
+| Category | Dropdown | Electronics, Clothing, Home & Garden |
+| Price Min | Number Input | Minimum price |
+| Price Max | Number Input | Maximum price |
+
+**Note**: All filters can be combined and have a "Reset Filters" button.
+
+## 🎨 Purchase Frequency Names
+
+The dashboard uses descriptive names for purchase frequency:
+- **1 purchase** → "One-time Buyers"
+- **2 purchases** → "Occasional Shoppers"
+- **3 purchases** → "Regular Customers"
+- **4 purchases** → "Frequent Buyers"
+- **5 purchases** → "Loyal Patrons"
+- **6+ purchases** → "VIP Customers", "Elite Members", etc.
 
 ## 📁 Project Structure
 
 ```
 Final_project_course_1/
 ├── dataset/              # CSV data files
-│   ├── customers.csv
-│   ├── orders.csv
-│   └── products.csv
-├── API.py               # Flask backend server
+│   ├── customers.csv     # Customer information
+│   ├── orders.csv        # Order transactions
+│   └── products.csv      # Product catalog
+├── API.py               # Flask backend with filters
 ├── report.html          # Dashboard frontend
-├── report.js            # JavaScript logic
+├── report.js            # JavaScript with filter logic
 ├── requirements.txt     # Python dependencies
-├── .gitignore          # Git ignore rules
+├── start_with_ngrok.bat # Auto-start script for ngrok
+├── push_to_github.bat   # Git push automation
+├── NGROK_GUIDE.md       # Detailed ngrok documentation
 └── README.md           # This file
 ```
 
 ## 🔌 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Serve dashboard HTML |
-| `/api/executive-overview` | GET | Executive metrics and revenue data |
-| `/api/customer-analysis` | GET | Customer segmentation and analysis |
-| `/api/product-performance` | GET | Product sales performance |
-| `/api/revenue-trend` | GET | Monthly revenue trend data |
+| Endpoint | Method | Query Parameters | Description |
+|----------|--------|------------------|-------------|
+| `/` | GET | - | Serve dashboard HTML |
+| `/api/executive-overview` | GET | `year`, `start_date`, `end_date` | Executive metrics |
+| `/api/customer-analysis` | GET | `loyalty_member`, `city`, `age_group` | Customer data |
+| `/api/product-performance` | GET | `category`, `price_min`, `price_max` | Product data |
+| `/api/revenue-trend` | GET | - | Monthly revenue |
 
-## 🎨 Design System
+### Example API Calls
+```bash
+# Filter executive by year
+GET /api/executive-overview?year=2024
 
-### Color Palette
-- **Primary Navy**: #1e3c72 (Main theme, buttons, headers)
-- **Light Navy**: #2a5298 (Gradients, secondary elements)
-- **Risk Red**: #d32f2f (Warning indicators)
-- **Gray**: #e9ecef (Inactive states)
+# Filter customers by city and loyalty
+GET /api/customer-analysis?city=New%20York&loyalty_member=Yes
 
-### Typography
-- **Font Family**: Segoe UI, Tahoma, Geneva, Verdana, sans-serif
-- **Metric Values**: 3em, bold
-- **Headers**: 1.5em - 2.5em
-- **Body Text**: 1em - 1.1em
+# Filter products by category and price
+GET /api/product-performance?category=Electronics&price_min=100&price_max=500
+```
 
 ## 🛠️ Technology Stack
 
 - **Backend**: Flask 3.1.3
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Charts**: Chart.js
+- **Charts**: Chart.js with chartjs-plugin-datalabels
 - **Data Processing**: Pandas 3.0.5
 - **CORS**: Flask-CORS 6.0.5
+- **Date Handling**: Python datetime
 
 ## 📊 Data Schema
 
 ### customers.csv
-- customer_id, gender, age, city, signup_date, loyalty_member
+```
+customer_id, gender, age, city, signup_date, loyalty_member
+```
 
 ### orders.csv
-- order_id, customer_id, product_id, order_date, quantity, payment_method
+```
+order_id, customer_id, product_id, order_date, quantity, payment_method
+```
 
 ### products.csv
-- product_id, product_name, category, price
+```
+product_id, product_name, category, price
+```
 
-## 🌐 Deployment
+## 🎨 Design System
+
+### Color Palette
+- **Primary Navy**: #1e3c72 (Main theme, buttons)
+- **Light Navy**: #2a5298 (Gradients, accents)
+- **Risk Red**: #d32f2f (Warning indicators)
+- **Success Green**: #4caf50 (Positive metrics)
+- **Gray Backgrounds**: #e9ecef, #f8f9fa
+
+### Typography
+- **Font**: Segoe UI, Tahoma, Geneva, Verdana, sans-serif
+- **Metric Values**: 3em, bold
+- **Headers**: 1.5em - 2.5em
+- **Body/Filters**: 0.85em - 1.1em
+
+## 🚀 Deployment Options
 
 ### Local Development
 ```bash
@@ -135,41 +222,45 @@ python API.py
 # Access at http://localhost:5000
 ```
 
-### Public Sharing with ngrok
+### Share via Ngrok (Fastest)
 ```bash
-# Terminal 1: Start Flask
-python API.py
-
-# Terminal 2: Start ngrok tunnel
-ngrok http 5000
-# Share the ngrok URL
+start_with_ngrok.bat
+# Get public URL in ~30 seconds
 ```
 
-### Production Deployment
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to:
-- PythonAnywhere (Free)
+### Deploy to Cloud (Production)
+See `GITHUB_DEPLOY.md` for deploying to:
+- PythonAnywhere (Free, recommended)
 - Render
+- Railway
 - Heroku
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push and create a Pull Request
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - feel free to use for learning and projects.
 
 ## 👤 Author
 
 **Pham Thi Quynh Nhu**
 - GitHub: [@quynhnhu0407](https://github.com/quynhnhu0407)
+- Project: [Final_project_course_1](https://github.com/quynhnhu0407/Final_project_course_1)
 
 ## 🙏 Acknowledgments
 
 - MindX Technology School
-- Flask Documentation
-- Chart.js Community
+- Flask & Chart.js Communities
+- Ngrok for tunneling solution
 
 ---
 
-Made with ❤️ for data-driven decision making
+**Current Ngrok URL**: https://utensil-elite-cornstalk.ngrok-free.dev/
+
+*Note: Ngrok URL changes on each restart (free plan)*
