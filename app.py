@@ -38,30 +38,50 @@ def get_executive_overview():
     """
     API cho trang Executive Overview
     Trả về: Total Revenue, Total Orders, Total Customers, AOV, Revenue Growth %
+    Query Parameters:
+    - year: filter by specific year (e.g., 2023, 2024)
+    - start_date: filter from date (YYYY-MM-DD)
+    - end_date: filter to date (YYYY-MM-DD)
     """
     try:
         customers, orders, products = load_data()
         
+        # Get filter parameters
+        year_filter = request.args.get('year', None)
+        start_date = request.args.get('start_date', None)
+        end_date = request.args.get('end_date', None)
+        
         # Merge orders với products để có giá
         orders_with_price = orders.merge(products[['product_id', 'price']], on='product_id')
         orders_with_price['total_price'] = orders_with_price['quantity'] * orders_with_price['price']
+        orders_with_price['order_date'] = pd.to_datetime(orders_with_price['order_date'])
+        
+        # Apply filters
+        filtered_orders = orders_with_price.copy()
+        
+        if year_filter:
+            filtered_orders = filtered_orders[filtered_orders['order_date'].dt.year == int(year_filter)]
+        
+        if start_date:
+            filtered_orders = filtered_orders[filtered_orders['order_date'] >= pd.to_datetime(start_date)]
+        
+        if end_date:
+            filtered_orders = filtered_orders[filtered_orders['order_date'] <= pd.to_datetime(end_date)]
         
         # Total Revenue
-        total_revenue = orders_with_price['total_price'].sum()
+        total_revenue = filtered_orders['total_price'].sum()
         
         # Total Orders
-        total_orders = len(orders)
+        total_orders = len(filtered_orders)
         
-        # Total Customers
-        total_customers = customers['customer_id'].nunique()
+        # Total Customers (unique customers in filtered orders)
+        total_customers = filtered_orders['customer_id'].nunique()
         
         # AOV (Average Order Value)
         aov = total_revenue / total_orders if total_orders > 0 else 0
         
-        # Revenue Growth % (so sánh 2023 vs 2024)
-        orders_with_price['order_date'] = pd.to_datetime(orders_with_price['order_date'])
+        # Revenue Growth % (so sánh 2023 vs 2024 hoặc theo filtered data)
         orders_with_price['year'] = orders_with_price['order_date'].dt.year
-        
         revenue_by_year = orders_with_price.groupby('year')['total_price'].sum().to_dict()
         
         revenue_2023 = revenue_by_year.get(2023, 0)
@@ -72,6 +92,15 @@ def get_executive_overview():
         else:
             revenue_growth = 0
         
+        # Get available years for filter dropdown
+        available_years = sorted(orders_with_price['year'].unique().tolist())
+        
+        # Get date range for date filters
+        date_range = {
+            "min": orders_with_price['order_date'].min().strftime('%Y-%m-%d'),
+            "max": orders_with_price['order_date'].max().strftime('%Y-%m-%d')
+        }
+        
         return jsonify({
             "success": True,
             "data": {
@@ -81,6 +110,15 @@ def get_executive_overview():
                 "aov": round(aov, 2),
                 "revenue_growth_percent": round(revenue_growth, 2),
                 "revenue_by_year": {str(k): round(v, 2) for k, v in revenue_by_year.items()}
+            },
+            "filter_options": {
+                "years": available_years,
+                "date_range": date_range
+            },
+            "active_filters": {
+                "year": year_filter,
+                "start_date": start_date,
+                "end_date": end_date
             }
         }), 200
         
@@ -94,17 +132,49 @@ def get_customer_analysis():
     """
     API cho trang Customer Analysis
     Trả về: New vs Returning Customers, Top Customers, Purchase Frequency, Segmentation
+    Query Parameters:
+    - loyalty_member: Yes/No (filter by loyalty status)
+    - city: city name (filter by city)
+    - age_group: 18-25, 26-35, 36-50, 50+ (filter by age range)
     """
     try:
         customers, orders, products = load_data()
         
+        # Get filter parameters
+        loyalty_filter = request.args.get('loyalty_member', None)
+        city_filter = request.args.get('city', None)
+        age_group_filter = request.args.get('age_group', None)
+        
+        # Apply filters to customers
+        filtered_customers = customers.copy()
+        
+        if loyalty_filter:
+            filtered_customers = filtered_customers[filtered_customers['loyalty_member'] == loyalty_filter]
+        
+        if city_filter:
+            filtered_customers = filtered_customers[filtered_customers['city'] == city_filter]
+        
+        # Add age_group column
+        filtered_customers['age_group'] = pd.cut(filtered_customers['age'], 
+                                        bins=[0, 25, 35, 50, 100], 
+                                        labels=['18-25', '26-35', '36-50', '50+'])
+        
+        if age_group_filter:
+            filtered_customers = filtered_customers[filtered_customers['age_group'].astype(str) == age_group_filter]
+        
+        # Get customer IDs after filtering
+        filtered_customer_ids = filtered_customers['customer_id'].tolist()
+        
+        # Filter orders to only include filtered customers
+        filtered_orders = orders[orders['customer_id'].isin(filtered_customer_ids)]
+        
         # Merge để có đầy đủ thông tin
-        orders_with_price = orders.merge(products[['product_id', 'price']], on='product_id')
+        orders_with_price = filtered_orders.merge(products[['product_id', 'price']], on='product_id')
         orders_with_price['total_price'] = orders_with_price['quantity'] * orders_with_price['price']
-        orders_with_customer = orders_with_price.merge(customers, on='customer_id')
+        orders_with_customer = orders_with_price.merge(filtered_customers, on='customer_id')
         
         # 1. New vs Returning Customers (dựa trên số lần mua)
-        customer_order_count = orders.groupby('customer_id').size().reset_index(name='order_count')
+        customer_order_count = filtered_orders.groupby('customer_id').size().reset_index(name='order_count')
         new_customers = len(customer_order_count[customer_order_count['order_count'] == 1])
         returning_customers = len(customer_order_count[customer_order_count['order_count'] > 1])
         
@@ -128,10 +198,19 @@ def get_customer_analysis():
         loyalty_stats.columns = ['loyalty_member', 'customer_count', 'total_revenue', 'order_count']
         
         # Segmentation theo tuổi
-        customers['age_group'] = pd.cut(customers['age'], 
+        age_segment = filtered_customers.groupby('age_group').size().to_dict()
+        
+        # Get unique values for filter dropdowns
+        all_customers = customers.copy()
+        all_customers['age_group'] = pd.cut(all_customers['age'], 
                                         bins=[0, 25, 35, 50, 100], 
                                         labels=['18-25', '26-35', '36-50', '50+'])
-        age_segment = customers.groupby('age_group').size().to_dict()
+        
+        filter_options = {
+            "loyalty_members": sorted(all_customers['loyalty_member'].unique().tolist()),
+            "cities": sorted(all_customers['city'].unique().tolist()),
+            "age_groups": ['18-25', '26-35', '36-50', '50+']
+        }
         
         return jsonify({
             "success": True,
@@ -144,6 +223,12 @@ def get_customer_analysis():
                 "purchase_frequency": {str(k): v for k, v in frequency_dist.items()},
                 "loyalty_segmentation": loyalty_stats.to_dict('records'),
                 "age_segmentation": {str(k): v for k, v in age_segment.items()}
+            },
+            "filter_options": filter_options,
+            "active_filters": {
+                "loyalty_member": loyalty_filter,
+                "city": city_filter,
+                "age_group": age_group_filter
             }
         }), 200
         
@@ -157,12 +242,39 @@ def get_product_performance():
     """
     API cho trang Product Performance
     Trả về: Top 10 Products, Revenue by Category, Quantity Sold, Best/Worst Products
+    Query Parameters:
+    - category: category name (filter by category)
+    - price_min: minimum price (filter by min price)
+    - price_max: maximum price (filter by max price)
     """
     try:
         customers, orders, products = load_data()
         
+        # Get filter parameters
+        category_filter = request.args.get('category', None)
+        price_min = request.args.get('price_min', None)
+        price_max = request.args.get('price_max', None)
+        
+        # Apply filters to products
+        filtered_products = products.copy()
+        
+        if category_filter:
+            filtered_products = filtered_products[filtered_products['category'] == category_filter]
+        
+        if price_min:
+            filtered_products = filtered_products[filtered_products['price'] >= float(price_min)]
+        
+        if price_max:
+            filtered_products = filtered_products[filtered_products['price'] <= float(price_max)]
+        
+        # Get product IDs after filtering
+        filtered_product_ids = filtered_products['product_id'].tolist()
+        
+        # Filter orders to only include filtered products
+        filtered_orders = orders[orders['product_id'].isin(filtered_product_ids)]
+        
         # Merge orders với products
-        orders_with_products = orders.merge(products, on='product_id')
+        orders_with_products = filtered_orders.merge(filtered_products, on='product_id')
         orders_with_products['total_price'] = orders_with_products['quantity'] * orders_with_products['price']
         
         # 1. Top 10 Products (theo doanh thu)
@@ -184,13 +296,22 @@ def get_product_performance():
         category_revenue.columns = ['category', 'total_revenue', 'quantity_sold', 'order_count']
         
         # 3. Total Quantity Sold
-        total_quantity = orders['quantity'].sum()
+        total_quantity = filtered_orders['quantity'].sum()
         
         # 4. Best Products (top 5 theo doanh thu)
         best_products = product_revenue.nlargest(5, 'total_revenue')[['product_name', 'total_revenue']].to_dict('records')
         
         # 5. Worst Products (bottom 5 theo doanh thu)
         worst_products = product_revenue.nsmallest(5, 'total_revenue')[['product_name', 'total_revenue']].to_dict('records')
+        
+        # Get unique values for filter dropdowns
+        filter_options = {
+            "categories": sorted(products['category'].unique().tolist()),
+            "price_range": {
+                "min": float(products['price'].min()),
+                "max": float(products['price'].max())
+            }
+        }
         
         return jsonify({
             "success": True,
@@ -200,6 +321,12 @@ def get_product_performance():
                 "total_quantity_sold": int(total_quantity),
                 "best_products": best_products,
                 "worst_products": worst_products
+            },
+            "filter_options": filter_options,
+            "active_filters": {
+                "category": category_filter,
+                "price_min": price_min,
+                "price_max": price_max
             }
         }), 200
         
