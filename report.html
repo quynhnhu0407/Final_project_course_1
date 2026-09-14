@@ -330,6 +330,53 @@
             box-shadow: 0 5px 15px rgba(30, 60, 114, 0.4);
         }
 
+        .export-button {
+            position: relative;
+        }
+
+        .export-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 2px solid #1e3c72;
+            border-radius: 8px;
+            margin-top: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+        .export-dropdown.show {
+            display: block;
+        }
+
+        .export-dropdown button {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            background: white;
+            color: #495057;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+
+        .export-dropdown button:hover {
+            background: #f8f9fa;
+            color: #1e3c72;
+        }
+
+        .export-dropdown button:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .export-dropdown button:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+
         .filter-group {
             display: flex;
             align-items: center;
@@ -462,6 +509,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="report.js"></script>
 </body>
 </html>

@@ -83,7 +83,17 @@ async function loadExecutiveOverview(filters = {}) {
         executiveFilterOptions = result.filter_options;
 
         container.innerHTML = `
-            <h2>📈 Executive Overview</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📈 Executive Overview</h2>
+                <div class="export-button">
+                    <button class="btn btn-primary" onclick="toggleExportMenu('executive')">📥 Export Report</button>
+                    <div id="executive-export-menu" class="export-dropdown">
+                        <button onclick="exportToPDF('executive')">📄 Export to PDF</button>
+                        <button onclick="exportToExcel('executive')">📊 Export to Excel</button>
+                        <button onclick="exportToCSV('executive')">📋 Export to CSV</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="chart-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
@@ -256,7 +266,17 @@ async function loadCustomerAnalysis(filters = {}) {
         customerFilterOptions = result.filter_options;
 
         container.innerHTML = `
-            <h2>👥 Customer Analysis</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>👥 Customer Analysis</h2>
+                <div class="export-button">
+                    <button class="btn btn-primary" onclick="toggleExportMenu('customer')">📥 Export Report</button>
+                    <div id="customer-export-menu" class="export-dropdown">
+                        <button onclick="exportToPDF('customer')">📄 Export to PDF</button>
+                        <button onclick="exportToExcel('customer')">📊 Export to Excel</button>
+                        <button onclick="exportToCSV('customer')">📋 Export to CSV</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="chart-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
@@ -425,7 +445,17 @@ async function loadProductPerformance(filters = {}) {
         productFilterOptions = result.filter_options;
 
         container.innerHTML = `
-            <h2>🛍️ Product Performance</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>🛍️ Product Performance</h2>
+                <div class="export-button">
+                    <button class="btn btn-primary" onclick="toggleExportMenu('product')">📥 Export Report</button>
+                    <div id="product-export-menu" class="export-dropdown">
+                        <button onclick="exportToPDF('product')">📄 Export to PDF</button>
+                        <button onclick="exportToExcel('product')">📊 Export to Excel</button>
+                        <button onclick="exportToCSV('product')">📋 Export to CSV</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="chart-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
@@ -963,3 +993,254 @@ function resetProductFilters() {
     document.getElementById('price-max-filter').value = '';
     loadProductPerformance();
 }
+
+
+// ==================== EXPORT FUNCTIONS ====================
+
+// Toggle export menu
+function toggleExportMenu(page) {
+    const menu = document.getElementById(`${page}-export-menu`);
+    const allMenus = document.querySelectorAll('.export-dropdown');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+    });
+    
+    // Toggle current menu
+    menu.classList.toggle('show');
+}
+
+// Close export menus when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.export-button')) {
+        document.querySelectorAll('.export-dropdown').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+
+// Export to PDF
+async function exportToPDF(page) {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        const container = document.getElementById(`${page}-tab`);
+        const canvas = await html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 190;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let position = 10;
+        
+        // Add title
+        doc.setFontSize(18);
+        doc.setTextColor(30, 60, 114);
+        doc.text(`${getPageTitle(page)} Report`, 105, position, { align: 'center' });
+        position += 10;
+        
+        // Add date
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 105, position, { align: 'center' });
+        position += 10;
+        
+        // Add image
+        if (imgHeight > 270) {
+            // Split into multiple pages
+            let heightLeft = imgHeight;
+            let currentPosition = 0;
+            
+            while (heightLeft > 0) {
+                doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight, '', 'FAST', currentPosition);
+                heightLeft -= 270;
+                currentPosition -= 270;
+                
+                if (heightLeft > 0) {
+                    doc.addPage();
+                    position = 10;
+                }
+            }
+        } else {
+            doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        }
+        
+        doc.save(`${page}-report-${Date.now()}.pdf`);
+        toggleExportMenu(page);
+        
+        // Show success message
+        showToast('PDF exported successfully!', 'success');
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        showToast('Failed to export PDF', 'error');
+    }
+}
+
+// Export to Excel
+function exportToExcel(page) {
+    try {
+        const wb = XLSX.utils.book_new();
+        const data = getCurrentPageData(page);
+        
+        if (!data) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Convert data to worksheet
+        Object.keys(data).forEach(sheetName => {
+            const ws = XLSX.utils.json_to_sheet(data[sheetName]);
+            XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31)); // Excel sheet name limit
+        });
+        
+        XLSX.writeFile(wb, `${page}-report-${Date.now()}.xlsx`);
+        toggleExportMenu(page);
+        
+        showToast('Excel exported successfully!', 'success');
+    } catch (error) {
+        console.error('Excel export failed:', error);
+        showToast('Failed to export Excel', 'error');
+    }
+}
+
+// Export to CSV
+function exportToCSV(page) {
+    try {
+        const data = getCurrentPageData(page);
+        
+        if (!data) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Export first dataset as CSV
+        const firstKey = Object.keys(data)[0];
+        const csvData = data[firstKey];
+        
+        if (!csvData || csvData.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Convert to CSV
+        const headers = Object.keys(csvData[0]);
+        const csvContent = [
+            headers.join(','),
+            ...csvData.map(row => headers.map(h => {
+                const value = row[h];
+                // Escape commas and quotes
+                if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            }).join(','))
+        ].join('\n');
+        
+        // Download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${page}-report-${Date.now()}.csv`;
+        link.click();
+        
+        toggleExportMenu(page);
+        showToast('CSV exported successfully!', 'success');
+    } catch (error) {
+        console.error('CSV export failed:', error);
+        showToast('Failed to export CSV', 'error');
+    }
+}
+
+// Get current page data for export
+function getCurrentPageData(page) {
+    const tables = document.querySelectorAll(`#${page}-tab table`);
+    const data = {};
+    
+    tables.forEach((table, index) => {
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+        const tableData = rows.slice(1).map(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            const rowData = {};
+            headers.forEach((header, i) => {
+                rowData[header] = cells[i] ? cells[i].textContent.trim() : '';
+            });
+            return rowData;
+        });
+        
+        const sheetName = table.previousElementSibling?.textContent || `Data ${index + 1}`;
+        data[sheetName] = tableData;
+    });
+    
+    return Object.keys(data).length > 0 ? data : null;
+}
+
+// Get page title
+function getPageTitle(page) {
+    const titles = {
+        'executive': 'Executive Overview',
+        'customer': 'Customer Analysis',
+        'product': 'Product Performance'
+    };
+    return titles[page] || page;
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4caf50' : '#f44336'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideIn 0.3s ease-out;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Add animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
