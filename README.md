@@ -120,6 +120,8 @@ ngrok config add-authtoken YOUR_AUTH_TOKEN
 | Category | Dropdown | Electronics, Clothing, Home & Garden |
 | Price Min | Number Input | Minimum price |
 | Price Max | Number Input | Maximum price |
+| From Date | Date Picker | Filter from order date |
+| To Date | Date Picker | Filter to order date |
 
 **Note**: All filters can be combined and have a "Reset Filters" button.
 

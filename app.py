@@ -240,6 +240,8 @@ def get_product_performance():
     - category: category name (filter by category)
     - price_min: minimum price (filter by min price)
     - price_max: maximum price (filter by max price)
+    - start_date: filter from date (YYYY-MM-DD)
+    - end_date: filter to date (YYYY-MM-DD)
     """
     try:
         customers, orders, products = load_data()
@@ -248,6 +250,8 @@ def get_product_performance():
         category_filter = request.args.get('category', None)
         price_min = request.args.get('price_min', None)
         price_max = request.args.get('price_max', None)
+        start_date = request.args.get('start_date', None)
+        end_date = request.args.get('end_date', None)
         
         # Apply filters to products
         filtered_products = products.copy()
@@ -265,7 +269,17 @@ def get_product_performance():
         filtered_product_ids = filtered_products['product_id'].tolist()
         
         # Filter orders to only include filtered products
-        filtered_orders = orders[orders['product_id'].isin(filtered_product_ids)]
+        filtered_orders = orders[orders['product_id'].isin(filtered_product_ids)].copy()
+        
+        # Apply date filters to orders
+        if start_date or end_date:
+            filtered_orders['order_date'] = pd.to_datetime(filtered_orders['order_date'])
+            
+            if start_date:
+                filtered_orders = filtered_orders[filtered_orders['order_date'] >= pd.to_datetime(start_date)]
+            
+            if end_date:
+                filtered_orders = filtered_orders[filtered_orders['order_date'] <= pd.to_datetime(end_date)]
         
         # Merge orders với products
         orders_with_products = filtered_orders.merge(filtered_products, on='product_id')
@@ -299,11 +313,19 @@ def get_product_performance():
         worst_products = product_revenue.nsmallest(5, 'total_revenue')[['product_name', 'total_revenue']].to_dict('records')
         
         # Get unique values for filter dropdowns
+        # Get date range from all orders
+        all_orders = orders.copy()
+        all_orders['order_date'] = pd.to_datetime(all_orders['order_date'])
+        
         filter_options = {
             "categories": sorted(products['category'].unique().tolist()),
             "price_range": {
                 "min": float(products['price'].min()),
                 "max": float(products['price'].max())
+            },
+            "date_range": {
+                "min": all_orders['order_date'].min().strftime('%Y-%m-%d'),
+                "max": all_orders['order_date'].max().strftime('%Y-%m-%d')
             }
         }
         
@@ -320,7 +342,9 @@ def get_product_performance():
             "active_filters": {
                 "category": category_filter,
                 "price_min": price_min,
-                "price_max": price_max
+                "price_max": price_max,
+                "start_date": start_date,
+                "end_date": end_date
             }
         }), 200
         
@@ -331,13 +355,24 @@ def get_product_performance():
 
 @app.route('/api/revenue-trend', methods=['GET'])
 def get_revenue_trend():
-    """API để lấy xu hướng doanh thu theo tháng"""
+    """API để lấy xu hướng doanh thu theo tháng
+    Query Parameters:
+    - year: filter by specific year (optional)
+    """
     try:
         customers, orders, products = load_data()
+        
+        # Get filter parameters
+        year_filter = request.args.get('year', None)
         
         orders_with_price = orders.merge(products[['product_id', 'price']], on='product_id')
         orders_with_price['total_price'] = orders_with_price['quantity'] * orders_with_price['price']
         orders_with_price['order_date'] = pd.to_datetime(orders_with_price['order_date'])
+        
+        # Apply year filter if provided
+        if year_filter:
+            orders_with_price = orders_with_price[orders_with_price['order_date'].dt.year == int(year_filter)]
+        
         orders_with_price['year_month'] = orders_with_price['order_date'].dt.to_period('M').astype(str)
         
         monthly_revenue = orders_with_price.groupby('year_month')['total_price'].sum().reset_index()

@@ -183,8 +183,8 @@ async function loadExecutiveOverview(filters = {}) {
             month: null
         };
 
-        // Load monthly data
-        await loadRevenueTrend();
+        // Load monthly data with year filter
+        await loadRevenueTrend(filters.year);
 
         // Render initial chart (by year)
         renderBarChart('revenue-chart', data.revenue_by_year, 'Revenue by Year', '#1e3c72');
@@ -195,9 +195,15 @@ async function loadExecutiveOverview(filters = {}) {
 }
 
 // Load revenue trend (monthly)
-async function loadRevenueTrend() {
+async function loadRevenueTrend(yearFilter = null) {
     try {
-        const response = await fetch(`${API_BASE}/api/revenue-trend`);
+        // Build URL with year filter if provided
+        let url = `${API_BASE}/api/revenue-trend`;
+        if (yearFilter) {
+            url += `?year=${yearFilter}`;
+        }
+        
+        const response = await fetch(url);
         const result = await response.json();
         
         if (!result.success) return;
@@ -218,7 +224,7 @@ async function loadRevenueTrend() {
 }
 
 // Switch between year and month view
-function switchRevenueView(view) {
+async function switchRevenueView(view) {
     if (!revenueTrendData) return;
 
     // Update button states
@@ -234,8 +240,13 @@ function switchRevenueView(view) {
         event.target.classList.add('btn-primary', 'active');
         event.target.previousElementSibling.classList.add('btn-secondary');
         
+        // Reload monthly data with current year filter
+        const yearFilter = document.getElementById('overview-year-filter')?.value || null;
+        await loadRevenueTrend(yearFilter);
+        
         if (revenueTrendData.month) {
-            renderBarChart('revenue-chart', revenueTrendData.month, 'Revenue by Month (All Years)', '#2a5298');
+            const title = yearFilter ? `Revenue by Month (${yearFilter})` : 'Revenue by Month (All Years)';
+            renderBarChart('revenue-chart', revenueTrendData.month, title, '#2a5298');
         }
     }
 }
@@ -490,6 +501,22 @@ async function loadProductPerformance(filters = {}) {
                                    step="10"
                                    value="${filters.price_max || ''}"
                                    placeholder="Max"
+                                   onchange="applyProductFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label for="product-start-date">From Date:</label>
+                            <input type="date" id="product-start-date" 
+                                   min="${productFilterOptions.date_range.min}" 
+                                   max="${productFilterOptions.date_range.max}" 
+                                   value="${filters.start_date || ''}"
+                                   onchange="applyProductFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label for="product-end-date">To Date:</label>
+                            <input type="date" id="product-end-date" 
+                                   min="${productFilterOptions.date_range.min}" 
+                                   max="${productFilterOptions.date_range.max}" 
+                                   value="${filters.end_date || ''}"
                                    onchange="applyProductFilters()">
                         </div>
                         <button class="btn btn-secondary" onclick="resetProductFilters()">Reset Filters</button>
@@ -976,7 +1003,9 @@ function applyProductFilters() {
     const filters = {
         category: document.getElementById('category-filter').value,
         price_min: document.getElementById('price-min-filter').value,
-        price_max: document.getElementById('price-max-filter').value
+        price_max: document.getElementById('price-max-filter').value,
+        start_date: document.getElementById('product-start-date').value,
+        end_date: document.getElementById('product-end-date').value
     };
     
     // Remove empty filters
@@ -991,6 +1020,8 @@ function resetProductFilters() {
     document.getElementById('category-filter').value = '';
     document.getElementById('price-min-filter').value = '';
     document.getElementById('price-max-filter').value = '';
+    document.getElementById('product-start-date').value = '';
+    document.getElementById('product-end-date').value = '';
     loadProductPerformance();
 }
 
