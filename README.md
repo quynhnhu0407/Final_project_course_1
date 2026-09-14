@@ -105,8 +105,7 @@ ngrok config add-authtoken YOUR_AUTH_TOKEN
 | Filter | Type | Description |
 |--------|------|-------------|
 | Year | Dropdown | Filter by specific year (2023, 2024) |
-| Start Date | Date Picker | Filter from date |
-| End Date | Date Picker | Filter to date |
+| Month | Dropdown | Filter by month (January - December) |
 
 ### Customer Analysis Filters
 | Filter | Type | Description |

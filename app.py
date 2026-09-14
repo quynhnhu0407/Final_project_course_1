@@ -40,16 +40,14 @@ def get_executive_overview():
     Trả về: Total Revenue, Total Orders, Total Customers, AOV, Revenue Growth %
     Query Parameters:
     - year: filter by specific year (e.g., 2023, 2024)
-    - start_date: filter from date (YYYY-MM-DD)
-    - end_date: filter to date (YYYY-MM-DD)
+    - month: filter by month (01-12)
     """
     try:
         customers, orders, products = load_data()
         
         # Get filter parameters
         year_filter = request.args.get('year', None)
-        start_date = request.args.get('start_date', None)
-        end_date = request.args.get('end_date', None)
+        month_filter = request.args.get('month', None)
         
         # Merge orders với products để có giá
         orders_with_price = orders.merge(products[['product_id', 'price']], on='product_id')
@@ -62,11 +60,8 @@ def get_executive_overview():
         if year_filter:
             filtered_orders = filtered_orders[filtered_orders['order_date'].dt.year == int(year_filter)]
         
-        if start_date:
-            filtered_orders = filtered_orders[filtered_orders['order_date'] >= pd.to_datetime(start_date)]
-        
-        if end_date:
-            filtered_orders = filtered_orders[filtered_orders['order_date'] <= pd.to_datetime(end_date)]
+        if month_filter:
+            filtered_orders = filtered_orders[filtered_orders['order_date'].dt.month == int(month_filter)]
         
         # Total Revenue
         total_revenue = filtered_orders['total_price'].sum()
@@ -117,8 +112,7 @@ def get_executive_overview():
             },
             "active_filters": {
                 "year": year_filter,
-                "start_date": start_date,
-                "end_date": end_date
+                "month": month_filter
             }
         }), 200
         

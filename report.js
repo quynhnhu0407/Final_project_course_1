@@ -109,20 +109,22 @@ async function loadExecutiveOverview(filters = {}) {
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label for="start-date-filter">Start Date:</label>
-                            <input type="date" id="start-date-filter" 
-                                   min="${executiveFilterOptions.date_range.min}" 
-                                   max="${executiveFilterOptions.date_range.max}" 
-                                   value="${filters.start_date || ''}"
-                                   onchange="applyExecutiveFilters()">
-                        </div>
-                        <div class="filter-group">
-                            <label for="end-date-filter">End Date:</label>
-                            <input type="date" id="end-date-filter" 
-                                   min="${executiveFilterOptions.date_range.min}" 
-                                   max="${executiveFilterOptions.date_range.max}" 
-                                   value="${filters.end_date || ''}"
-                                   onchange="applyExecutiveFilters()">
+                            <label for="month-filter">Month:</label>
+                            <select id="month-filter" onchange="applyExecutiveFilters()">
+                                <option value="">All Months</option>
+                                <option value="01" ${filters.month === '01' ? 'selected' : ''}>January</option>
+                                <option value="02" ${filters.month === '02' ? 'selected' : ''}>February</option>
+                                <option value="03" ${filters.month === '03' ? 'selected' : ''}>March</option>
+                                <option value="04" ${filters.month === '04' ? 'selected' : ''}>April</option>
+                                <option value="05" ${filters.month === '05' ? 'selected' : ''}>May</option>
+                                <option value="06" ${filters.month === '06' ? 'selected' : ''}>June</option>
+                                <option value="07" ${filters.month === '07' ? 'selected' : ''}>July</option>
+                                <option value="08" ${filters.month === '08' ? 'selected' : ''}>August</option>
+                                <option value="09" ${filters.month === '09' ? 'selected' : ''}>September</option>
+                                <option value="10" ${filters.month === '10' ? 'selected' : ''}>October</option>
+                                <option value="11" ${filters.month === '11' ? 'selected' : ''}>November</option>
+                                <option value="12" ${filters.month === '12' ? 'selected' : ''}>December</option>
+                            </select>
                         </div>
                         <button class="btn btn-secondary" onclick="resetExecutiveFilters()">Reset Filters</button>
                     </div>
@@ -929,8 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function applyExecutiveFilters() {
     const filters = {
         year: document.getElementById('overview-year-filter').value,
-        start_date: document.getElementById('start-date-filter').value,
-        end_date: document.getElementById('end-date-filter').value
+        month: document.getElementById('month-filter').value
     };
     
     // Remove empty filters
@@ -943,8 +944,7 @@ function applyExecutiveFilters() {
 
 function resetExecutiveFilters() {
     document.getElementById('overview-year-filter').value = '';
-    document.getElementById('start-date-filter').value = '';
-    document.getElementById('end-date-filter').value = '';
+    document.getElementById('month-filter').value = '';
     loadExecutiveOverview();
 }
 
