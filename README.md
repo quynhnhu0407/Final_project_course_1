@@ -37,6 +37,7 @@ A comprehensive sales analytics dashboard with advanced filtering, built with Fl
 - Color-coded loyalty indicators (Navy/Red)
 - Responsive design for all screen sizes
 - Smooth animations and transitions
+- **Export Reports** - PDF, Excel, CSV formats
 
 ## 🚀 Quick Start
 
@@ -122,6 +123,34 @@ ngrok config add-authtoken YOUR_AUTH_TOKEN
 | Price Max | Number Input | Maximum price |
 
 **Note**: All filters can be combined and have a "Reset Filters" button.
+
+## 📥 Export Reports
+
+Each page includes an **"Export Report"** button with multiple formats:
+
+### Available Export Formats
+
+| Format | Description | Use Case |
+|--------|-------------|----------|
+| **PDF** | High-quality visual report | Presentations, archiving |
+| **Excel** | Spreadsheet with all tables | Further analysis, sharing |
+| **CSV** | Simple comma-separated data | Data import, processing |
+
+### How to Export
+
+1. Navigate to any report page (Executive/Customer/Product)
+2. Click **"📥 Export Report"** button (top right)
+3. Select format:
+   - **📄 Export to PDF** - Full visual report with charts
+   - **📊 Export to Excel** - All tables in spreadsheet format
+   - **📋 Export to CSV** - First table as CSV file
+4. File downloads automatically
+
+### Export Libraries Used
+
+- **jsPDF** - PDF generation
+- **html2canvas** - Chart to image conversion  
+- **SheetJS (xlsx)** - Excel file generation
 
 ## 🎨 Purchase Frequency Names
 
