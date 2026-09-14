@@ -1,5 +1,5 @@
-// API Base URL
-const API_BASE = 'http://localhost:5000';
+// API Base URL - use relative path to work with both localhost and ngrok
+const API_BASE = window.location.origin;
 
 // Store chart instances
 let chartInstances = {};
